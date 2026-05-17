@@ -3,34 +3,27 @@ from backend.core.state import ScannerState
 from backend.core.llm_provider import get_llm
 import json
 
-def hardcoded_secrets_agent(state: ScannerState) -> dict:
+def technical_report_agent(state: ScannerState) -> dict:
     """
-    static agent: hardcoded_secrets_agent
+    reporting agent: technical_report_agent
     """
     llm = get_llm()
-    source_code = state.get("source_code", {})
-    if not source_code:
-        return {"current_phase": "static_done"}
+    findings = state.get("findings", [])
+    if not findings:
+        return {"current_phase": "reporting_done"}
         
-    system_prompt = """Sen bir Hardcoded Secret Analiz Güvenlik Uzmanısın.
-Görevin sana verilen kaynak kod dosyalarında "Hardcoded Secrets" (gömülü API anahtarları, şifreler, tokenlar vb.) bulmaktır.
+    system_prompt = """Sen bir Teknik Raporlama Uzmanısın.
+Görevin tespit edilen zafiyetlerin yeniden üretilmesi (steps to reproduce) için detaylı teknik adımları içeren bir rapor taslağı oluşturmaktır.
     
-Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
-    [
-      {
-        "vulnerability_name": "...",
-        "severity": "High/Medium/Low",
-        "description": "Detaylı açıklama",
-        "affected_files": ["dosya_yolu"],
-        "remediation": "Çözüm önerisi"
-      }
-    ]
-    Eğer zafiyet yoksa boş liste `[]` döndür. Sadece JSON döndür.
+Bulgularını aşağıdaki JSON formatında döndürmelisin:
+    {
+      "report_update": "Genişletilmiş veya güncellenmiş metin..."
+    }
+    Sadece JSON döndür.
     """
     
     context_text = ""
-    for path, content in source_code.items():
-        context_text += f"\n--- DOSYA: {path} ---\n{content[:2000]}\n"
+    context_text += f"\n--- BULGULAR ---\n{json.dumps(findings, indent=2)}\n"
     
     response = llm.invoke([
         SystemMessage(content=system_prompt),
@@ -57,9 +50,9 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
             report_update = json.dumps(parsed, indent=2, ensure_ascii=False)
             
     except Exception as e:
-        print(f"[hardcoded_secrets_agent] JSON parse hatası: {e}")
+        print(f"[technical_report_agent] JSON parse hatası: {e}")
 
-    result_state = {"current_phase": "static_done"}
+    result_state = {"current_phase": "reporting_done"}
     if new_findings:
         current_findings = state.get("findings", [])
         current_findings.extend(new_findings)
@@ -67,7 +60,7 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
         
     if report_update:
         current_report = state.get("final_report", "")
-        current_report += f"\n\n=== HARDCODED_SECRETS_AGENT GÜNCELLEMESİ ===\n" + report_update
+        current_report += f"\n\n=== TECHNICAL_REPORT_AGENT GÜNCELLEMESİ ===\n" + report_update
         result_state["final_report"] = current_report
         
     return result_state

@@ -48,6 +48,7 @@ async def start_scan():
         findings=[],
         current_phase="init",
         next_agent="",
+        completed_agents=[],
         final_report="",
         errors=[]
     )
@@ -69,7 +70,7 @@ async def stream_scan(scan_id: str, request: Request):
         
     async def event_generator():
         initial_state = active_scans[scan_id]["state"]
-        config = {"recursion_limit": 20}
+        config = {"recursion_limit": 100}
         
         try:
             # yield first message

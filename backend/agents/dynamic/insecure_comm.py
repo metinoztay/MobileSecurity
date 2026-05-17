@@ -5,39 +5,39 @@ import json
 
 def insecure_comm_agent(state: ScannerState) -> dict:
     """
-    Dinamik analiz ajanı: Ağ trafiğini inceler, güvensiz iletişim (cleartext, pinleme eksikliği) arar.
+    dynamic agent: insecure_comm_agent
     """
     llm = get_llm()
     network_traffic = state.get("network_traffic", [])
-    
     if not network_traffic:
-        return {"current_phase": "dynamic_comm_done"}
+        return {"current_phase": "dynamic_done"}
         
-    system_prompt = """
-    Sen bir Dinamik Mobil Ağ Trafiği Güvenlik Uzmanısın.
-    Görevin sana verilen yakalanmış ağ trafiği (HTTP/HTTPS) loglarını inceleyerek güvensiz iletişim zafiyetlerini (Örn: Düz metin HTTP kullanımı, Sertifika Pinleme eksikliği göstergeleri, URL'de taşınan hassas veriler) tespit etmektir.
+    system_prompt = """Sen bir Dinamik Mobil Ağ Trafiği Güvenlik Uzmanısın.
+Görevin yakalanan HTTP/HTTPS isteklerini inceleyerek güvensiz iletişim zafiyetlerini (Düz metin HTTP kullanımı, Sertifika Pinleme eksiklikleri vb.) tespit etmektir.
     
-    Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
+Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
     [
       {
-        "vulnerability_name": "Insecure Communication (HTTP)",
-        "severity": "Medium",
+        "vulnerability_name": "...",
+        "severity": "High/Medium/Low",
         "description": "Detaylı açıklama",
-        "affected_files": ["endpoint_url"],
+        "affected_files": ["dosya_yolu"],
         "remediation": "Çözüm önerisi"
       }
     ]
     Eğer zafiyet yoksa boş liste `[]` döndür. Sadece JSON döndür.
     """
     
-    findings = []
-    
-    traffic_text = json.dumps(network_traffic, indent=2)
+    context_text = ""
+    context_text += f"\n--- AĞ TRAFİĞİ ---\n{json.dumps(network_traffic, indent=2)}\n"
     
     response = llm.invoke([
         SystemMessage(content=system_prompt),
-        HumanMessage(content=f"İşte ağ trafiği logları:\n{traffic_text}")
+        HumanMessage(content=f"İşte incelemen gereken veri:\n{context_text}")
     ])
+    
+    new_findings = []
+    report_update = ""
     
     try:
         content = response.content.strip()
@@ -46,16 +46,27 @@ def insecure_comm_agent(state: ScannerState) -> dict:
         elif content.startswith("```"):
             content = content[3:-3]
             
-        new_findings = json.loads(content)
-        if isinstance(new_findings, list):
-            findings.extend(new_findings)
+        parsed = json.loads(content)
+        
+        if isinstance(parsed, list):
+            new_findings = parsed
+        elif isinstance(parsed, dict) and "report_update" in parsed:
+            report_update = parsed["report_update"]
+        elif isinstance(parsed, dict) and "mapped_findings" in parsed: # OWASP special
+            report_update = json.dumps(parsed, indent=2, ensure_ascii=False)
+            
     except Exception as e:
-        print(f"InsecureCommAgent JSON parse hatası: {e}")
+        print(f"[insecure_comm_agent] JSON parse hatası: {e}")
 
-    current_findings = state.get("findings", [])
-    current_findings.extend(findings)
-    
-    return {
-        "findings": current_findings,
-        "current_phase": "dynamic_comm_done"
-    }
+    result_state = {"current_phase": "dynamic_done"}
+    if new_findings:
+        current_findings = state.get("findings", [])
+        current_findings.extend(new_findings)
+        result_state["findings"] = current_findings
+        
+    if report_update:
+        current_report = state.get("final_report", "")
+        current_report += f"\n\n=== INSECURE_COMM_AGENT GÜNCELLEMESİ ===\n" + report_update
+        result_state["final_report"] = current_report
+        
+    return result_state

@@ -3,17 +3,17 @@ from backend.core.state import ScannerState
 from backend.core.llm_provider import get_llm
 import json
 
-def hardcoded_secrets_agent(state: ScannerState) -> dict:
+def webview_security_agent(state: ScannerState) -> dict:
     """
-    static agent: hardcoded_secrets_agent
+    static agent: webview_security_agent
     """
     llm = get_llm()
     source_code = state.get("source_code", {})
     if not source_code:
         return {"current_phase": "static_done"}
         
-    system_prompt = """Sen bir Hardcoded Secret Analiz Güvenlik Uzmanısın.
-Görevin sana verilen kaynak kod dosyalarında "Hardcoded Secrets" (gömülü API anahtarları, şifreler, tokenlar vb.) bulmaktır.
+    system_prompt = """Sen bir WebView Güvenlik Uzmanısın.
+Görevin Android kaynak kodlarındaki WebView kullanımlarını (setJavaScriptEnabled(true), addJavascriptInterface) XSS veya yetkisiz arayüz erişimi açısından zafiyet içerip içermediğini kontrol etmektir.
     
 Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
     [
@@ -57,7 +57,7 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
             report_update = json.dumps(parsed, indent=2, ensure_ascii=False)
             
     except Exception as e:
-        print(f"[hardcoded_secrets_agent] JSON parse hatası: {e}")
+        print(f"[webview_security_agent] JSON parse hatası: {e}")
 
     result_state = {"current_phase": "static_done"}
     if new_findings:
@@ -67,7 +67,7 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
         
     if report_update:
         current_report = state.get("final_report", "")
-        current_report += f"\n\n=== HARDCODED_SECRETS_AGENT GÜNCELLEMESİ ===\n" + report_update
+        current_report += f"\n\n=== WEBVIEW_SECURITY_AGENT GÜNCELLEMESİ ===\n" + report_update
         result_state["final_report"] = current_report
         
     return result_state

@@ -3,17 +3,17 @@ from backend.core.state import ScannerState
 from backend.core.llm_provider import get_llm
 import json
 
-def hardcoded_secrets_agent(state: ScannerState) -> dict:
+def auth_bypass_agent(state: ScannerState) -> dict:
     """
-    static agent: hardcoded_secrets_agent
+    dynamic agent: auth_bypass_agent
     """
     llm = get_llm()
-    source_code = state.get("source_code", {})
-    if not source_code:
-        return {"current_phase": "static_done"}
+    network_traffic = state.get("network_traffic", [])
+    if not network_traffic:
+        return {"current_phase": "dynamic_done"}
         
-    system_prompt = """Sen bir Hardcoded Secret Analiz Güvenlik Uzmanısın.
-Görevin sana verilen kaynak kod dosyalarında "Hardcoded Secrets" (gömülü API anahtarları, şifreler, tokenlar vb.) bulmaktır.
+    system_prompt = """Sen bir Yetkilendirme (Authentication/Authorization) Uzmanısın.
+Görevin yakalanan isteklerdeki token'ların geçerliliğini ve kullanıcılar arası yetki atlatma (BOLA/IDOR) durumlarını veya zayıf oturum kontrollerini incelemektir.
     
 Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
     [
@@ -29,8 +29,7 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
     """
     
     context_text = ""
-    for path, content in source_code.items():
-        context_text += f"\n--- DOSYA: {path} ---\n{content[:2000]}\n"
+    context_text += f"\n--- AĞ TRAFİĞİ ---\n{json.dumps(network_traffic, indent=2)}\n"
     
     response = llm.invoke([
         SystemMessage(content=system_prompt),
@@ -57,9 +56,9 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
             report_update = json.dumps(parsed, indent=2, ensure_ascii=False)
             
     except Exception as e:
-        print(f"[hardcoded_secrets_agent] JSON parse hatası: {e}")
+        print(f"[auth_bypass_agent] JSON parse hatası: {e}")
 
-    result_state = {"current_phase": "static_done"}
+    result_state = {"current_phase": "dynamic_done"}
     if new_findings:
         current_findings = state.get("findings", [])
         current_findings.extend(new_findings)
@@ -67,7 +66,7 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
         
     if report_update:
         current_report = state.get("final_report", "")
-        current_report += f"\n\n=== HARDCODED_SECRETS_AGENT GÜNCELLEMESİ ===\n" + report_update
+        current_report += f"\n\n=== AUTH_BYPASS_AGENT GÜNCELLEMESİ ===\n" + report_update
         result_state["final_report"] = current_report
         
     return result_state

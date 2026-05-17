@@ -3,17 +3,18 @@ from backend.core.state import ScannerState
 from backend.core.llm_provider import get_llm
 import json
 
-def hardcoded_secrets_agent(state: ScannerState) -> dict:
+def manifest_analyzer_agent(state: ScannerState) -> dict:
     """
-    static agent: hardcoded_secrets_agent
+    static agent: manifest_analyzer_agent
     """
     llm = get_llm()
     source_code = state.get("source_code", {})
     if not source_code:
         return {"current_phase": "static_done"}
         
-    system_prompt = """Sen bir Hardcoded Secret Analiz Güvenlik Uzmanısın.
-Görevin sana verilen kaynak kod dosyalarında "Hardcoded Secrets" (gömülü API anahtarları, şifreler, tokenlar vb.) bulmaktır.
+    system_prompt = """Sen bir Manifest Analyzer Güvenlik Uzmanısın.
+Görevin sana verilen 'AndroidManifest.xml' veya benzeri konfigürasyon dosyalarını analiz etmektir.
+Özellikle 'android:exported="true"' olan bileşenleri, tehlikeli izinleri (permissions) ve 'android:allowBackup="true"' gibi hatalı yapılandırmaları tespit et.
     
 Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
     [
@@ -57,7 +58,7 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
             report_update = json.dumps(parsed, indent=2, ensure_ascii=False)
             
     except Exception as e:
-        print(f"[hardcoded_secrets_agent] JSON parse hatası: {e}")
+        print(f"[manifest_analyzer_agent] JSON parse hatası: {e}")
 
     result_state = {"current_phase": "static_done"}
     if new_findings:
@@ -67,7 +68,7 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
         
     if report_update:
         current_report = state.get("final_report", "")
-        current_report += f"\n\n=== HARDCODED_SECRETS_AGENT GÜNCELLEMESİ ===\n" + report_update
+        current_report += f"\n\n=== MANIFEST_ANALYZER_AGENT GÜNCELLEMESİ ===\n" + report_update
         result_state["final_report"] = current_report
         
     return result_state

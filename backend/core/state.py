@@ -16,6 +16,7 @@ class ScannerState(TypedDict):
     # İslem Durumu
     current_phase: str # 'static', 'dynamic', 'reporting', 'done'
     next_agent: str # Orkestratörün karar verdiği bir sonraki ajan adi
+    completed_agents: List[str] # Zaten calismis olan ajanlar listesi
     
     # Çıktı Verileri
     findings: List[Finding] # Ajanlarin buldugu zafiyetler

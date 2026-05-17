@@ -28,6 +28,7 @@ def main():
         findings=[],
         current_phase="init",
         next_agent="",
+        completed_agents=[],
         final_report="",
         errors=[]
     )
