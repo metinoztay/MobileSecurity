@@ -116,6 +116,7 @@ async def stream_scan(scan_id: str, request: Request):
                         event_data["details"]["message"] = f"Orkestratör düşünüyor... Sıradaki ajan: {value.get('next_agent')}"
                     elif key == "decompile_agent":
                         event_data["details"]["message"] = "Sistem: APK dosyası decompile ediliyor..."
+                        event_data["details"]["source_code"] = value.get("source_code")
                     elif key == "hardcoded_secrets_agent":
                         event_data["details"]["message"] = "Statik Analiz: Hardcoded Secret aranıyor..."
                     elif key == "insecure_comm_agent":

@@ -7,6 +7,8 @@ function App() {
   const [rawFindings, setRawFindings] = useState([])
   const [selectedFile, setSelectedFile] = useState(null)
   const [useMockData, setUseMockData] = useState(true)
+  const [sourceCode, setSourceCode] = useState(null)
+  const [activeFile, setActiveFile] = useState(null)
   const consoleEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -27,6 +29,8 @@ function App() {
     setLogs([])
     setFinalReport(null)
     setRawFindings([])
+    setSourceCode(null)
+    setActiveFile(null)
 
     try {
       // 1. Start the scan via POST
@@ -65,6 +69,13 @@ function App() {
           }
           if (parsed.details.raw_findings) {
             setRawFindings(parsed.details.raw_findings)
+          }
+          if (parsed.details.source_code) {
+            setSourceCode(parsed.details.source_code)
+            const keys = Object.keys(parsed.details.source_code)
+            if (keys.length > 0 && !activeFile) {
+              setActiveFile(keys[0])
+            }
           }
         }
 
@@ -203,6 +214,24 @@ function App() {
                   {finding.owasp_category}
                 </div>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{finding.description}</p>
+                {finding.code_snippet && (
+                  <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
+                      <strong>Kod Parçacığı (Snippet)</strong> {finding.line_number && <span>- Satır: {finding.line_number}</span>}
+                    </div>
+                    <pre style={{ 
+                      background: '#020617', 
+                      padding: '0.75rem', 
+                      borderRadius: '4px', 
+                      overflowX: 'auto',
+                      fontSize: '0.8rem',
+                      color: '#e2e8f0',
+                      border: '1px solid #1e293b'
+                    }}>
+                      <code>{finding.code_snippet}</code>
+                    </pre>
+                  </div>
+                )}
                 <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#94a3b8', background: '#111827', padding: '0.75rem', borderRadius: '4px' }}>
                   <strong>Çözüm:</strong> {finding.remediation}
                 </div>
@@ -245,11 +274,79 @@ function App() {
                     <strong>Etkilenen Dosyalar:</strong> {finding.affected_files.join(', ')}
                   </div>
                 )}
+                {finding.code_snippet && (
+                  <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
+                      <strong>Kod Parçacığı (Snippet)</strong> {finding.line_number && <span>- Satır: {finding.line_number}</span>}
+                    </div>
+                    <pre style={{ 
+                      background: '#020617', 
+                      padding: '0.75rem', 
+                      borderRadius: '4px', 
+                      overflowX: 'auto',
+                      fontSize: '0.8rem',
+                      color: '#e2e8f0',
+                      border: '1px solid #1e293b'
+                    }}>
+                      <code>{finding.code_snippet}</code>
+                    </pre>
+                  </div>
+                )}
                 <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#94a3b8', background: '#111827', padding: '0.75rem', borderRadius: '4px' }}>
                   <strong>Çözüm:</strong> {finding.remediation}
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Source Code Panel */}
+      {sourceCode && Object.keys(sourceCode).length > 0 && (
+        <div className="panel" style={{ marginTop: '2rem' }}>
+          <h2><span className="icon">📂</span> Çıkarılan Dosyalar (Decompiled Files)</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
+            APK içerisinden ayrıştırılan ve ajanların analizine sunulan kritik dosyalar.
+          </p>
+          
+          <div style={{ display: 'flex', gap: '1rem', border: '1px solid #334155', borderRadius: '8px', overflow: 'hidden' }}>
+            {/* File List */}
+            <div style={{ width: '250px', background: '#0f172a', borderRight: '1px solid #334155', display: 'flex', flexDirection: 'column' }}>
+              {Object.keys(sourceCode).map(filename => (
+                <button 
+                  key={filename}
+                  onClick={() => setActiveFile(filename)}
+                  style={{
+                    padding: '1rem',
+                    textAlign: 'left',
+                    background: activeFile === filename ? '#1e293b' : 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid #1e293b',
+                    color: activeFile === filename ? 'var(--accent-color)' : '#cbd5e1',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {filename.split('/').pop()}
+                </button>
+              ))}
+            </div>
+            
+            {/* File Content */}
+            <div style={{ flex: 1, padding: '1rem', background: '#020617', maxHeight: '500px', overflowY: 'auto' }}>
+              <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem' }}>{activeFile}</div>
+              <pre style={{ 
+                margin: 0, 
+                color: '#e2e8f0', 
+                fontSize: '0.85rem', 
+                fontFamily: 'monospace',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all'
+              }}>
+                {sourceCode[activeFile]}
+              </pre>
+            </div>
           </div>
         </div>
       )}

@@ -28,7 +28,9 @@ def owasp_mapper_agent(state: ScannerState) -> dict:
           "owasp_category": "M1: Improper Platform Usage",
           "severity": "...",
           "description": "...",
-          "remediation": "..."
+          "remediation": "...",
+          "code_snippet": "...",
+          "line_number": "..."
         }
       ]
     }

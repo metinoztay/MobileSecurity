@@ -22,6 +22,8 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
         "severity": "High/Medium/Low",
         "description": "Detaylı açıklama",
         "affected_files": ["dosya_yolu"],
+        "code_snippet": "BİREBİR KAYNAK KODDAN ALINMIŞ, zafiyete neden olan satırlar. Asla örnek veya varsayımsal kod yazma, SADECE sana verilen kaynaktan kopyala.",
+        "line_number": "Bulunduğu satır numarası veya yeri (tahmini)",
         "remediation": "Çözüm önerisi"
       }
     ]
