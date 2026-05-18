@@ -5,6 +5,8 @@ function App() {
   const [logs, setLogs] = useState([])
   const [finalReport, setFinalReport] = useState(null)
   const [rawFindings, setRawFindings] = useState([])
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [useMockData, setUseMockData] = useState(true)
   const consoleEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -16,6 +18,11 @@ function App() {
   }, [logs])
 
   const startScan = async () => {
+    if (!useMockData && !selectedFile) {
+      alert("Lütfen bir APK dosyası seçin veya Mock Veri seçeneğini işaretleyin.")
+      return
+    }
+
     setIsScanning(true)
     setLogs([])
     setFinalReport(null)
@@ -23,8 +30,15 @@ function App() {
 
     try {
       // 1. Start the scan via POST
+      const formData = new FormData()
+      formData.append('use_mock', useMockData ? "true" : "false")
+      if (selectedFile && !useMockData) {
+        formData.append('file', selectedFile)
+      }
+
       const res = await fetch('http://localhost:8000/api/scan', {
         method: 'POST',
+        body: formData
       })
       const data = await res.json()
       
@@ -94,12 +108,30 @@ function App() {
         <div className="panel">
           <h2><span className="icon">🎯</span> Görev Kontrol</h2>
           
-          <div className="upload-area">
+          <div className="upload-area" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <span className="upload-icon">📦</span>
             <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              Analiz edilecek APK dosyasını sürükleyin veya seçin.
+              Analiz edilecek APK dosyasını seçin.
             </p>
-            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>(Şu an mock veri kullanılacaktır)</p>
+            <input 
+              type="file" 
+              accept=".apk" 
+              onChange={(e) => {
+                 setSelectedFile(e.target.files[0])
+                 setUseMockData(false)
+              }} 
+              style={{ marginBottom: '1rem', width: '100%' }}
+            />
+            {selectedFile && <p style={{color: 'var(--accent-color)', fontSize: '0.9rem', marginBottom: '1rem'}}>Seçilen Dosya: {selectedFile.name}</p>}
+            
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={useMockData} 
+                onChange={(e) => setUseMockData(e.target.checked)} 
+              />
+              <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Bunun yerine Mock Veri kullan (Hızlı Test)</span>
+            </label>
           </div>
 
           <button 

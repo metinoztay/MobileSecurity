@@ -6,6 +6,7 @@ from backend.core.llm_provider import get_llm
 import json
 
 AGENT_LIST = [
+    "decompile_agent",
     "manifest_analyzer_agent", "hardcoded_secrets_agent", "crypto_analyzer_agent",
     "insecure_storage_agent", "network_config_agent", "webview_security_agent",
     "deeplink_analyzer_agent", "intent_spoofing_agent", "broadcast_receiver_agent",
@@ -33,6 +34,18 @@ def orchestrator_node(state: ScannerState) -> dict:
     if not pending_agents:
         # Eger calisacak ajan kalmadiysa islemi bitir
         return {"next_agent": "END"}
+        
+    apk_path = state.get("apk_path", "")
+    source_code = state.get("source_code", {})
+    
+    # Eger gercek bir APK yuklendiyse ve henuz decompile edilmediyse ilk is decompile_agent'tir
+    if apk_path.endswith(".apk") and not source_code and "decompile_agent" in pending_agents:
+        completed.append("decompile_agent")
+        return {
+            "next_agent": "decompile_agent",
+            "completed_agents": completed,
+            "current_phase": "decompile_phase"
+        }
         
     system_prompt = """
     Sen Mobil Güvenlik Platformunun Orkestratörüsün (Orchestrator).

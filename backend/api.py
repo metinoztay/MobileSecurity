@@ -1,12 +1,15 @@
 import asyncio
 import json
 import uuid
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
+import os
+import shutil
 
 from backend.workflows.scanner_graph import create_scanner_graph
 from backend.core.state import ScannerState
+from backend.core.config import config
 
 app = FastAPI(title="Mobile Security Agent API")
 
@@ -24,19 +27,38 @@ active_scans = {}
 scanner_app = create_scanner_graph()
 
 @app.post("/api/scan")
-async def start_scan():
+async def start_scan(file: UploadFile = File(None), use_mock: str = Form("true")):
     """
-    Mock bir tarama baslatir ve scan_id dondurur.
+    Tarama baslatir ve scan_id dondurur.
+    Eger file yuklenmisse onu kaydeder.
     """
     scan_id = str(uuid.uuid4())
     
-    # Mock Initial State
-    initial_state = ScannerState(
-        apk_path="/mock/path/app.apk",
-        source_code={
+    is_mock = use_mock.lower() == "true"
+    
+    apk_path = "/mock/path/app.apk"
+    source_code = {}
+    
+    if is_mock or not file:
+        apk_path = "/mock/path/app.apk"
+        source_code = {
             "MainActivity.java": "public class MainActivity { public static final String API_KEY = 'AKIAIOSFODNN7EXAMPLE'; }",
             "NetworkConfig.xml": "<network-security-config><base-config cleartextTrafficPermitted='true'/></network-security-config>"
-        },
+        }
+    else:
+        # Gerçek dosya yüklendi
+        os.makedirs(config.WORKSPACE_DIR, exist_ok=True)
+        apk_path = os.path.join(config.WORKSPACE_DIR, file.filename)
+        with open(apk_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Decompile Agent'ın çalışması için source_code boş bırakılır
+        source_code = {}
+    
+    # Mock Initial State
+    initial_state = ScannerState(
+        apk_path=apk_path,
+        source_code=source_code,
         network_traffic=[
             {
                 "url": "http://api.example.com/login",
@@ -58,7 +80,7 @@ async def start_scan():
         "status": "running"
     }
     
-    return {"scan_id": scan_id, "message": "Scan started"}
+    return {"scan_id": scan_id, "message": "Scan started", "apk_path": apk_path, "is_mock": is_mock}
 
 @app.get("/api/stream/{scan_id}")
 async def stream_scan(scan_id: str, request: Request):
@@ -92,6 +114,8 @@ async def stream_scan(scan_id: str, request: Request):
                     
                     if key == "orchestrator":
                         event_data["details"]["message"] = f"Orkestratör düşünüyor... Sıradaki ajan: {value.get('next_agent')}"
+                    elif key == "decompile_agent":
+                        event_data["details"]["message"] = "Sistem: APK dosyası decompile ediliyor..."
                     elif key == "hardcoded_secrets_agent":
                         event_data["details"]["message"] = "Statik Analiz: Hardcoded Secret aranıyor..."
                     elif key == "insecure_comm_agent":

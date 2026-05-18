@@ -4,6 +4,8 @@ from langgraph.graph import StateGraph, END
 from backend.core.state import ScannerState
 from backend.agents.orchestrator import orchestrator_node
 
+from backend.agents.static.decompile_agent import decompile_agent
+
 # --- Statik Ajanlar ---
 from backend.agents.static.manifest_analyzer import manifest_analyzer_agent
 from backend.agents.static.hardcoded_secrets import hardcoded_secrets_agent
@@ -34,6 +36,7 @@ from backend.agents.reporting.owasp_mapper import owasp_mapper_agent
 
 
 AGENT_LIST = [
+    "decompile_agent",
     "manifest_analyzer_agent", "hardcoded_secrets_agent", "crypto_analyzer_agent",
     "insecure_storage_agent", "network_config_agent", "webview_security_agent",
     "deeplink_analyzer_agent", "intent_spoofing_agent", "broadcast_receiver_agent",
@@ -51,6 +54,7 @@ def create_scanner_graph():
     workflow.add_node("orchestrator", orchestrator_node)
     
     # 2. Tüm ajanları tek tek düğüm olarak ekle
+    workflow.add_node("decompile_agent", decompile_agent)
     workflow.add_node("manifest_analyzer_agent", manifest_analyzer_agent)
     workflow.add_node("hardcoded_secrets_agent", hardcoded_secrets_agent)
     workflow.add_node("crypto_analyzer_agent", crypto_analyzer_agent)
