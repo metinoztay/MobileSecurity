@@ -99,6 +99,7 @@ async def stream_scan(scan_id: str, request: Request):
                     elif key == "owasp_mapper_agent":
                         event_data["details"]["message"] = "Raporlama: OWASP Top 10 eşleştirmesi yapılıyor..."
                         event_data["details"]["final_report"] = value.get("final_report")
+                        event_data["details"]["raw_findings"] = value.get("findings", [])
                         
                     yield json.dumps(event_data)
                     await asyncio.sleep(1.5) # Arayuzde animasyonun gorunmesi icin ufak gecikme

@@ -4,6 +4,7 @@ function App() {
   const [isScanning, setIsScanning] = useState(false)
   const [logs, setLogs] = useState([])
   const [finalReport, setFinalReport] = useState(null)
+  const [rawFindings, setRawFindings] = useState([])
   const consoleEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -18,6 +19,7 @@ function App() {
     setIsScanning(true)
     setLogs([])
     setFinalReport(null)
+    setRawFindings([])
 
     try {
       // 1. Start the scan via POST
@@ -39,8 +41,17 @@ function App() {
         
         setLogs(prev => [...prev, { time: timeString, ...parsed }])
 
-        if (parsed.type === 'agent_update' && parsed.details.final_report) {
-          setFinalReport(JSON.parse(parsed.details.final_report))
+        if (parsed.type === 'agent_update') {
+          if (parsed.details.final_report) {
+            try {
+              setFinalReport(JSON.parse(parsed.details.final_report))
+            } catch (e) {
+              // final_report henüz JSON formatında olmayabilir, yoksay
+            }
+          }
+          if (parsed.details.raw_findings) {
+            setRawFindings(parsed.details.raw_findings)
+          }
         }
 
         if (parsed.type === 'done' || parsed.type === 'error') {
@@ -160,6 +171,48 @@ function App() {
                   {finding.owasp_category}
                 </div>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{finding.description}</p>
+                <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#94a3b8', background: '#111827', padding: '0.75rem', borderRadius: '4px' }}>
+                  <strong>Çözüm:</strong> {finding.remediation}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Raw Findings Panel */}
+      {rawFindings && rawFindings.length > 0 && (
+        <div className="panel" style={{ marginTop: '2rem' }}>
+          <h2><span className="icon">🔍</span> Ajanların Detaylı Bulguları (Raw Findings)</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+            Aşağıdaki liste, sistemdeki tüm analiz ajanlarının (statik ve dinamik) herhangi bir OWASP filtrelemesinden geçmemiş ham bulgularını göstermektedir.
+          </p>
+          
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {rawFindings.map((finding, idx) => (
+              <div key={idx} style={{ 
+                background: 'rgba(0,0,0,0.3)', 
+                padding: '1.5rem', 
+                borderRadius: '8px',
+                borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : finding.severity === 'Medium' ? 'var(--warning)' : 'var(--accent-color)'}`
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <h4 style={{ color: '#fff' }}>{finding.vulnerability_name}</h4>
+                  <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
+                    <span style={{ color: '#cbd5e1', fontSize: '0.75rem', background: '#334155', padding: '4px 8px', borderRadius: '12px' }}>
+                      Agent: {finding.source_agent || 'Unknown'}
+                    </span>
+                    <span style={{ color: finding.severity === 'High' ? 'var(--danger)' : finding.severity === 'Medium' ? 'var(--warning)' : 'var(--accent-color)', fontWeight: 'bold' }}>
+                      {finding.severity}
+                    </span>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{finding.description}</p>
+                {finding.affected_files && finding.affected_files.length > 0 && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
+                    <strong>Etkilenen Dosyalar:</strong> {finding.affected_files.join(', ')}
+                  </div>
+                )}
                 <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#94a3b8', background: '#111827', padding: '0.75rem', borderRadius: '4px' }}>
                   <strong>Çözüm:</strong> {finding.remediation}
                 </div>

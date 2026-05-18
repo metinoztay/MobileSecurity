@@ -5,34 +5,44 @@ import json
 
 def owasp_mapper_agent(state: ScannerState) -> dict:
     """
-    reporting agent: owasp_mapper_agent
+    Raporlama ajanı: Tüm ajanlardan gelen bulguları (findings) alır ve OWASP Mobile Top 10 ile eşleştirir.
+    Nihai raporu oluşturarak UI tarafındaki JSON parse işlemlerini tetikler.
     """
     llm = get_llm()
     findings = state.get("findings", [])
-    if not findings:
-        return {"current_phase": "reporting_done"}
-        
-    system_prompt = """Sen bir OWASP Mobile Güvenlik Uzmanısın.
-Görevin sana verilen zafiyet listesini incelemek ve her bir zafiyeti güncel OWASP Mobile Top 10 kategorilerinden en uygun olanı ile eşleştirmektir.
     
-Bulgularını aşağıdaki JSON formatında döndürmelisin:
+    if not findings:
+        return {"final_report": json.dumps({"executive_summary": "Herhangi bir zafiyet bulunamadı.", "mapped_findings": []}), "current_phase": "done"}
+        
+    system_prompt = """
+    Sen bir OWASP Mobile Güvenlik Uzmanısın.
+    Görevin sana verilen zafiyet listesini incelemek ve her bir zafiyeti güncel OWASP Mobile Top 10 (M1 - M10) kategorilerinden en uygun olanı ile eşleştirmektir.
+    Ayrıca yöneticiler için kısa bir 'Executive Summary' (Yönetici Özeti) oluşturmalısın.
+    
+    Lütfen aşağıdaki JSON formatında bir çıktı üret:
     {
-      "report_update": "Genişletilmiş veya güncellenmiş metin..."
+      "executive_summary": "Tüm bulguların yöneticiler için teknik olmayan genel özeti...",
+      "mapped_findings": [
+        {
+          "vulnerability_name": "...",
+          "owasp_category": "M1: Improper Platform Usage",
+          "severity": "...",
+          "description": "...",
+          "remediation": "..."
+        }
+      ]
     }
     Sadece JSON döndür.
     """
     
-    context_text = ""
-    context_text += f"\n--- BULGULAR ---\n{json.dumps(findings, indent=2)}\n"
+    findings_text = json.dumps(findings, indent=2)
     
     response = llm.invoke([
         SystemMessage(content=system_prompt),
-        HumanMessage(content=f"İşte incelemen gereken veri:\n{context_text}")
+        HumanMessage(content=f"İşte sistemdeki diğer ajanlardan gelen bulgular:\n{findings_text}")
     ])
     
-    new_findings = []
-    report_update = ""
-    
+    final_report_str = response.content
     try:
         content = response.content.strip()
         if content.startswith("```json"):
@@ -40,27 +50,18 @@ Bulgularını aşağıdaki JSON formatında döndürmelisin:
         elif content.startswith("```"):
             content = content[3:-3]
             
-        parsed = json.loads(content)
-        
-        if isinstance(parsed, list):
-            new_findings = parsed
-        elif isinstance(parsed, dict) and "report_update" in parsed:
-            report_update = parsed["report_update"]
-        elif isinstance(parsed, dict) and "mapped_findings" in parsed: # OWASP special
-            report_update = json.dumps(parsed, indent=2, ensure_ascii=False)
-            
+        final_report_json = json.loads(content)
+        # Frontend'in okuyabilmesi için JSON string olarak set ediyoruz.
+        final_report_str = json.dumps(final_report_json, indent=2, ensure_ascii=False)
     except Exception as e:
-        print(f"[owasp_mapper_agent] JSON parse hatası: {e}")
-
-    result_state = {"current_phase": "reporting_done"}
-    if new_findings:
-        current_findings = state.get("findings", [])
-        current_findings.extend(new_findings)
-        result_state["findings"] = current_findings
+        print(f"OWASPMapperAgent JSON parse hatası: {e}")
+        # Hata durumunda frontend'in çökmemesi için varsayılan json döner
+        final_report_str = json.dumps({
+            "executive_summary": "Rapor oluşturulurken bir hata meydana geldi.",
+            "mapped_findings": []
+        })
         
-    if report_update:
-        current_report = state.get("final_report", "")
-        current_report += f"\n\n=== OWASP_MAPPER_AGENT GÜNCELLEMESİ ===\n" + report_update
-        result_state["final_report"] = current_report
-        
-    return result_state
+    return {
+        "final_report": final_report_str,
+        "current_phase": "done"
+    }

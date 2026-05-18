@@ -50,6 +50,9 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
         
         if isinstance(parsed, list):
             new_findings = parsed
+            for f in new_findings:
+                if isinstance(f, dict):
+                    f["source_agent"] = "insecure_comm_agent" 
         elif isinstance(parsed, dict) and "report_update" in parsed:
             report_update = parsed["report_update"]
         elif isinstance(parsed, dict) and "mapped_findings" in parsed: # OWASP special
