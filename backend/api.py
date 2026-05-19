@@ -42,8 +42,11 @@ async def start_scan(file: UploadFile = File(None), use_mock: str = Form("true")
     if is_mock or not file:
         apk_path = "/mock/path/app.apk"
         source_code = {
-            "MainActivity.java": "public class MainActivity { public static final String API_KEY = 'AKIAIOSFODNN7EXAMPLE'; }",
-            "NetworkConfig.xml": "<network-security-config><base-config cleartextTrafficPermitted='true'/></network-security-config>"
+            "AndroidManifest.xml": "<?xml version='1.0' encoding='utf-8'?><manifest xmlns:android='http://schemas.android.com/apk/res/android' package='com.example.vulnerable'>\n  <uses-permission android:name='android.permission.READ_EXTERNAL_STORAGE'/>\n  <uses-permission android:name='android.permission.WRITE_EXTERNAL_STORAGE'/>\n  <uses-permission android:name='android.permission.INTERNET'/>\n  <application android:allowBackup='true' android:debuggable='true' android:usesCleartextTraffic='true'>\n    <activity android:name='.MainActivity' android:exported='true'>\n      <intent-filter>\n        <action android:name='android.intent.action.VIEW'/>\n        <category android:name='android.intent.category.DEFAULT'/>\n        <category android:name='android.intent.category.BROWSABLE'/>\n        <data android:scheme='vulnerableapp' android:host='login'/>\n      </intent-filter>\n    </activity>\n    <receiver android:name='.MyBroadcastReceiver' android:exported='true'>\n      <intent-filter><action android:name='com.example.UPDATE_DATA'/></intent-filter>\n    </receiver>\n    <provider android:name='.MyContentProvider' android:authorities='com.example.provider' android:exported='true' android:grantUriPermissions='true'/>\n    <service android:name='.MyService' android:exported='true'/>\n  </application>\n</manifest>",
+            "MainActivity.java": "package com.example.vulnerable;\nimport android.webkit.WebView;\nimport android.util.Log;\nimport android.content.SharedPreferences;\nimport android.content.Intent;\nimport android.net.Uri;\nimport android.os.Bundle;\nimport android.app.Activity;\nimport java.security.MessageDigest;\nimport javax.crypto.Cipher;\nimport javax.crypto.spec.SecretKeySpec;\nimport java.io.File;\nimport java.io.FileOutputStream;\n\npublic class MainActivity extends Activity {\n    // Hardcoded Secrets\n    public static final String AWS_SECRET_KEY = \"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\";\n    public static final String DB_PASS = \"supersecret123\";\n    \n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        \n        // Insecure Storage (SharedPreferences & External File)\n        SharedPreferences prefs = getSharedPreferences(\"user_prefs\", MODE_PRIVATE);\n        prefs.edit().putString(\"session_token\", \"token_12345\").apply();\n        try {\n            File extFile = new File(getExternalFilesDir(null), \"backup.txt\");\n            FileOutputStream fos = new FileOutputStream(extFile);\n            fos.write(DB_PASS.getBytes());\n        } catch(Exception e) {}\n        \n        // Webview Security\n        WebView webView = new WebView(this);\n        webView.getSettings().setJavaScriptEnabled(true);\n        webView.getSettings().setAllowFileAccessFromFileURLs(true);\n        webView.addJavascriptInterface(new Object(), \"Android\");\n        \n        // Crypto (Weak MD5 & AES ECB)\n        try {\n            MessageDigest md = MessageDigest.getInstance(\"MD5\");\n            byte[] key = \"hardcodedkey1234\".getBytes();\n            SecretKeySpec secretKeySpec = new SecretKeySpec(key, \"AES\");\n            Cipher cipher = Cipher.getInstance(\"AES/ECB/PKCS5Padding\");\n            cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);\n        } catch(Exception e) {}\n        \n        // Data Leakage\n        Log.d(\"SensitiveInfo\", \"User Password logged: \" + DB_PASS);\n        \n        // Intent Spoofing (Implicit Broadcast)\n        Intent intent = new Intent(\"com.example.INTERNAL_ACTION\");\n        intent.putExtra(\"secret_data\", \"confidential_info\");\n        sendBroadcast(intent);\n        \n        // Deep link Analyzer (Open arbitrary URL without validation)\n        Uri data = getIntent().getData();\n        if(data != null) { webView.loadUrl(data.getQueryParameter(\"url\")); }\n    }\n}",
+            "DatabaseHelper.java": "package com.example.vulnerable;\nimport android.database.sqlite.SQLiteDatabase;\n\npublic class DatabaseHelper {\n    public void getUserInfo(SQLiteDatabase db, String username) {\n        // SQL Injection (String concatenation)\n        String query = \"SELECT * FROM users WHERE username = '\" + username + \"'\";\n        db.rawQuery(query, null);\n    }\n}",
+            "NetworkConfig.xml": "<network-security-config>\n  <base-config cleartextTrafficPermitted='true'>\n    <trust-anchors>\n      <certificates src='system'/>\n      <certificates src='user'/>\n    </trust-anchors>\n  </base-config>\n</network-security-config>",
+            "MyContentProvider.java": "package com.example.vulnerable;\nimport android.content.ContentProvider;\n// Insecure Content Provider\npublic class MyContentProvider extends ContentProvider {\n    @Override\n    public boolean onCreate() { return true; }\n    // query, insert, update, delete omitted for brevity but exported=true allows unrestricted access\n}"
         }
     else:
         # Gerçek dosya yüklendi
@@ -65,7 +68,41 @@ async def start_scan(file: UploadFile = File(None), use_mock: str = Form("true")
                 "url": "http://api.example.com/login",
                 "method": "POST",
                 "headers": {"Authorization": "Basic YWRtaW46YWRtaW4="},
-                "body": '{"username": "admin", "password": "password123"}'
+                "body": '{"username": "admin", "password": "password123"}',
+                "response_status": 200,
+                "response_body": '{"token": "eyJhbGciOiJIUzI1NiIsInR5cCI... (No HttpOnly flag)"}'
+            },
+            {
+                "url": "https://api.example.com/transfer",
+                "method": "POST",
+                "headers": {"Cookie": "session_id=12345"},
+                "body": '{"amount": 1000, "to": "attacker"}',
+                "response_status": 200,
+                "response_body": '{"status": "success", "txid": "9999"}'
+            },
+            {
+                "url": "http://api.example.com/profile?name=<script>alert(1)</script>",
+                "method": "GET",
+                "headers": {},
+                "body": "",
+                "response_status": 200,
+                "response_body": '<html><body>Welcome <script>alert(1)</script></body></html>'
+            },
+            {
+                "url": "https://api.example.com/admin_panel",
+                "method": "GET",
+                "headers": {"Role": "Guest"},
+                "body": "",
+                "response_status": 200,
+                "response_body": '{"admin_data": "Top secret company financials"}'
+            },
+            {
+                "url": "https://api.example.com/users?id=1' OR '1'='1",
+                "method": "GET",
+                "headers": {},
+                "body": "",
+                "response_status": 200,
+                "response_body": '[{"id":1,"name":"admin"},{"id":2,"name":"user"}]'
             }
         ],
         findings=[],
