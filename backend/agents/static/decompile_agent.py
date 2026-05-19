@@ -1,6 +1,7 @@
 import os
 import subprocess
 import urllib.request
+import shutil
 from backend.core.state import ScannerState
 from backend.core.config import config
 
@@ -10,6 +11,7 @@ def decompile_agent(state: ScannerState) -> dict:
     LLM kullanmaz, sistem aracı olarak çalışır.
     """
     apk_path = state.get("apk_path", "")
+    scan_id = state.get("scan_id", "default_scan")
     current_source_code = state.get("source_code", {})
     
     # Eğer zaten decompile edildiyse veya apk değilse atla
@@ -18,7 +20,10 @@ def decompile_agent(state: ScannerState) -> dict:
 
     workspace = config.WORKSPACE_DIR
     apktool_path = os.path.join(workspace, "apktool.jar")
-    out_dir = os.path.join(workspace, "decompiled_app")
+    out_dir = os.path.join(workspace, f"decompiled_{scan_id}")
+    
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir, ignore_errors=True)
     
     # 1. Apktool.jar yoksa indir
     if not os.path.exists(apktool_path):

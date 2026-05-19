@@ -119,29 +119,71 @@ function App() {
         <div className="panel">
           <h2><span className="icon">🎯</span> Görev Kontrol</h2>
           
-          <div className="upload-area" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div 
+            className="upload-area" 
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}
+            onClick={() => document.getElementById('file-upload').click()}
+          >
             <span className="upload-icon">📦</span>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              Analiz edilecek APK dosyasını seçin.
+            <p style={{ color: 'var(--text-main)', marginBottom: '0.5rem', fontWeight: '600' }}>
+              APK Dosyası Yükleyin
+            </p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              Seçmek için bu alana tıklayın
             </p>
             <input 
+              id="file-upload"
               type="file" 
               accept=".apk" 
               onChange={(e) => {
                  setSelectedFile(e.target.files[0])
                  setUseMockData(false)
               }} 
-              style={{ marginBottom: '1rem', width: '100%' }}
+              style={{ display: 'none' }}
             />
-            {selectedFile && <p style={{color: 'var(--accent-color)', fontSize: '0.9rem', marginBottom: '1rem'}}>Seçilen Dosya: {selectedFile.name}</p>}
-            
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            {selectedFile && (
+              <div style={{ marginTop: '1rem', background: 'rgba(0, 255, 157, 0.1)', border: '1px solid var(--accent-color)', borderRadius: '8px', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{color: 'var(--accent-color)', fontSize: '0.9rem', fontWeight: 'bold'}}>✓ {selectedFile.name}</span>
+              </div>
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: '#111827', padding: '1rem', borderRadius: '12px', border: '1px solid #1f2937' }}>
+            <div>
+              <h4 style={{ fontSize: '0.95rem', color: '#e2e8f0', marginBottom: '0.2rem' }}>Hızlı Test Modu (Mock Veri)</h4>
+              <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Dosya yüklemeden sistemi örnek verilerle test et</p>
+            </div>
+            <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
               <input 
                 type="checkbox" 
                 checked={useMockData} 
-                onChange={(e) => setUseMockData(e.target.checked)} 
+                onChange={(e) => {
+                   setUseMockData(e.target.checked)
+                   if(e.target.checked) setSelectedFile(null)
+                }} 
+                style={{ opacity: 0, width: 0, height: 0 }}
               />
-              <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Bunun yerine Mock Veri kullan (Hızlı Test)</span>
+              <span style={{
+                position: 'absolute',
+                cursor: 'pointer',
+                top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: useMockData ? 'var(--accent-color)' : '#334155',
+                transition: '.4s',
+                borderRadius: '24px'
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  content: '""',
+                  height: '16px',
+                  width: '16px',
+                  left: useMockData ? '24px' : '4px',
+                  bottom: '4px',
+                  backgroundColor: useMockData ? '#000' : '#fff',
+                  transition: '.4s',
+                  borderRadius: '50%',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </span>
             </label>
           </div>
 
@@ -202,7 +244,8 @@ function App() {
                 background: 'rgba(0,0,0,0.3)', 
                 padding: '1.5rem', 
                 borderRadius: '8px',
-                borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)'}`
+                borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)'}`,
+                minWidth: 0
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                   <h4 style={{ color: '#fff' }}>{finding.vulnerability_name}</h4>
@@ -255,7 +298,8 @@ function App() {
                 background: 'rgba(0,0,0,0.3)', 
                 padding: '1.5rem', 
                 borderRadius: '8px',
-                borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : finding.severity === 'Medium' ? 'var(--warning)' : 'var(--accent-color)'}`
+                borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : finding.severity === 'Medium' ? 'var(--warning)' : 'var(--accent-color)'}`,
+                minWidth: 0
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                   <h4 style={{ color: '#fff' }}>{finding.vulnerability_name}</h4>

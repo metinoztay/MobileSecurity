@@ -9,6 +9,7 @@ class Finding(TypedDict):
 
 class ScannerState(TypedDict):
     # Girdi Verileri
+    scan_id: str
     apk_path: str
     source_code: Dict[str, str] # {dosya_yolu: icerik}
     network_traffic: List[Dict[str, Any]] # Yakalanan ag loglari

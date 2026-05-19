@@ -48,7 +48,7 @@ async def start_scan(file: UploadFile = File(None), use_mock: str = Form("true")
     else:
         # Gerçek dosya yüklendi
         os.makedirs(config.WORKSPACE_DIR, exist_ok=True)
-        apk_path = os.path.join(config.WORKSPACE_DIR, file.filename)
+        apk_path = os.path.join(config.WORKSPACE_DIR, f"{scan_id}.apk")
         with open(apk_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
@@ -57,6 +57,7 @@ async def start_scan(file: UploadFile = File(None), use_mock: str = Form("true")
     
     # Mock Initial State
     initial_state = ScannerState(
+        scan_id=scan_id,
         apk_path=apk_path,
         source_code=source_code,
         network_traffic=[
