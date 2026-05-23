@@ -10,6 +10,7 @@ function App() {
   const [sourceCode, setSourceCode] = useState(null)
   const [activeFile, setActiveFile] = useState(null)
   const consoleEndRef = useRef(null)
+  const eventSourceRef = useRef(null)
 
   const scrollToBottom = () => {
     consoleEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -52,6 +53,7 @@ function App() {
 
       // 2. Connect to SSE stream
       const eventSource = new EventSource(`http://localhost:8000/api/stream/${data.scan_id}`)
+      eventSourceRef.current = eventSource
       
       eventSource.onmessage = (event) => {
         const parsed = JSON.parse(event.data)
@@ -81,6 +83,7 @@ function App() {
 
         if (parsed.type === 'done' || parsed.type === 'error') {
           eventSource.close()
+          eventSourceRef.current = null
           setIsScanning(false)
         }
       }
@@ -88,6 +91,7 @@ function App() {
       eventSource.onerror = (error) => {
         console.error("SSE Error:", error)
         eventSource.close()
+        eventSourceRef.current = null
         setIsScanning(false)
         setLogs(prev => [...prev, { 
           time: new Date().toLocaleTimeString('tr-TR', { hour12: false }), 
@@ -105,6 +109,19 @@ function App() {
         message: error.message 
       }])
     }
+  }
+
+  const stopScan = () => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
+    setIsScanning(false)
+    setLogs(prev => [...prev, { 
+      time: new Date().toLocaleTimeString('tr-TR', { hour12: false }), 
+      type: 'info', 
+      message: 'Tarama kullanıcı tarafından durduruldu.' 
+    }])
   }
 
   return (
@@ -187,13 +204,26 @@ function App() {
             </label>
           </div>
 
-          <button 
-            className="btn-primary" 
-            onClick={startScan}
-            disabled={isScanning}
-          >
-            {isScanning ? 'Analiz Sürüyor...' : 'Sistemi Başlat'}
-          </button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button 
+              className="btn-primary" 
+              onClick={startScan}
+              disabled={isScanning}
+              style={{ flex: 1 }}
+            >
+              {isScanning ? 'Analiz Sürüyor...' : 'Sistemi Başlat'}
+            </button>
+
+            {isScanning && (
+              <button 
+                className="btn-danger" 
+                onClick={stopScan}
+                style={{ flex: 1 }}
+              >
+                Durdur
+              </button>
+            )}
+          </div>
 
           {isScanning && (
             <div style={{ textAlign: 'center' }}>

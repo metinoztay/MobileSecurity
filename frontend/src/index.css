@@ -146,6 +146,33 @@ header p {
   box-shadow: none;
 }
 
+.btn-danger {
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: var(--bg-primary);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* Terminal Console */
 .console {
   background: #000;
