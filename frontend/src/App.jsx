@@ -205,16 +205,15 @@ function App() {
           </div>
 
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button 
-              className="btn-primary" 
-              onClick={startScan}
-              disabled={isScanning}
-              style={{ flex: 1 }}
-            >
-              {isScanning ? 'Analiz Sürüyor...' : 'Sistemi Başlat'}
-            </button>
-
-            {isScanning && (
+            {!isScanning ? (
+              <button 
+                className="btn-primary" 
+                onClick={startScan}
+                style={{ flex: 1 }}
+              >
+                Sistemi Başlat
+              </button>
+            ) : (
               <button 
                 className="btn-danger" 
                 onClick={stopScan}
