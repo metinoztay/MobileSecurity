@@ -51,6 +51,7 @@ def owasp_mapper_agent(state: ScannerState) -> dict:
         ]
       }
     }
+    ÖNEMLİ: Lütfen tüm çıktılarını, zafiyet isimlerini, açıklamaları ve çözüm önerilerini tamamen Türkçe (Turkish) olarak üret.
     Sadece JSON döndür.
     """
     

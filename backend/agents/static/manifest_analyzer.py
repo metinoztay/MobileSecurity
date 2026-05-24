@@ -28,7 +28,8 @@ Bulgularını aşağıdaki JSON formatında bir liste olarak döndürmelisin:
         "remediation": "Çözüm önerisi"
       }
     ]
-    Eğer zafiyet yoksa boş liste `[]` döndür. Sadece JSON döndür.
+    Eğer zafiyet yoksa boş liste `[]` döndür. ÖNEMLİ: Lütfen tüm çıktılarını, zafiyet isimlerini, açıklamaları ve çözüm önerilerini tamamen Türkçe (Turkish) olarak üret.
+    Sadece JSON döndür.
     """
     
     context_text = ""

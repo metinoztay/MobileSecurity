@@ -19,6 +19,7 @@ Bulgularını aşağıdaki JSON formatında döndürmelisin:
     {
       "report_update": "Genişletilmiş veya güncellenmiş metin..."
     }
+    ÖNEMLİ: Lütfen tüm çıktılarını, zafiyet isimlerini, açıklamaları ve çözüm önerilerini tamamen Türkçe (Turkish) olarak üret.
     Sadece JSON döndür.
     """
     
