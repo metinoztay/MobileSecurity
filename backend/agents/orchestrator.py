@@ -25,15 +25,40 @@ def orchestrator_node(state: ScannerState) -> dict:
     llm = get_llm()
     completed = state.get("completed_agents", [])
     
-    # Tüm olasi ajanlar
-    all_agents = AGENT_LIST
+    STATIC_AGENTS = [
+        "decompile_agent", "manifest_analyzer_agent", "hardcoded_secrets_agent", "crypto_analyzer_agent",
+        "insecure_storage_agent", "network_config_agent", "webview_security_agent",
+        "deeplink_analyzer_agent", "intent_spoofing_agent", "broadcast_receiver_agent",
+        "content_provider_agent", "service_analyzer_agent"
+    ]
     
-    # Henüz çalışmayanlar
-    pending_agents = [a for a in all_agents if a not in completed]
+    DYNAMIC_AGENTS = [
+        "insecure_comm_agent", "auth_bypass_agent", "data_leakage_agent",
+        "runtime_sqli_agent", "runtime_xss_agent", "session_management_agent"
+    ]
     
-    if not pending_agents:
-        # Eger calisacak ajan kalmadiysa islemi bitir
+    REPORTING_AGENTS = [
+        "severity_scoring_agent", "remediation_agent", "executive_summary_agent",
+        "technical_report_agent", "owasp_mapper_agent"
+    ]
+    
+    pending_static = [a for a in STATIC_AGENTS if a not in completed]
+    pending_dynamic = [a for a in DYNAMIC_AGENTS if a not in completed]
+    pending_reporting = [a for a in REPORTING_AGENTS if a not in completed]
+    
+    if pending_static:
+        available_agents = pending_static
+        phase_hint = "Statik Analiz"
+    elif pending_dynamic:
+        available_agents = pending_dynamic
+        phase_hint = "Dinamik Analiz"
+    elif pending_reporting:
+        available_agents = pending_reporting
+        phase_hint = "Raporlama"
+    else:
         return {"next_agent": "END"}
+        
+    pending_agents = available_agents
         
     apk_path = state.get("apk_path", "")
     source_code = state.get("source_code", {})
@@ -50,8 +75,8 @@ def orchestrator_node(state: ScannerState) -> dict:
     system_prompt = """
     Sen Mobil Güvenlik Platformunun Orkestratörüsün (Orchestrator).
     Görevin: Sistemdeki durumu (state) incelemek ve henüz çalışmamış ajanlar arasından sıradaki çalışması gereken ajanı seçmektir.
-    Sistemde hiçbir kural motoru yoktur, ajanların sırasına sen karar verirsin.
-    Ancak mantıksal bir sıra izlemelisin: Önce statik analizler, sonra dinamik analizler, en son raporlama analizleri.
+    Sistemde katı faz kuralları işletilmektedir. Şu anki faz: {phase_hint}
+    Sadece aşağıdaki listeden bir ajan seçebilirsin!
     
     Henüz Çalışmamış Ajanlar (Sadece bunlardan birini seçebilirsin!):
     {pending_agents}
@@ -72,6 +97,7 @@ def orchestrator_node(state: ScannerState) -> dict:
     current_phase = state.get("current_phase", "init")
     
     formatted_prompt = system_prompt.format(
+        phase_hint=phase_hint,
         pending_agents=", ".join(pending_agents),
         current_phase=current_phase,
         findings_count=findings_count,

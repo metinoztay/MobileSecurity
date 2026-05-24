@@ -260,57 +260,169 @@ function App() {
 
       {/* Results Panel */}
       {finalReport && (
-        <div className="panel" style={{ marginTop: '2rem' }}>
-          <h2><span className="icon">📊</span> Yönetici Özeti (Executive Summary)</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            {finalReport.executive_summary}
-          </p>
-          
-          <h3>OWASP Top 10 Eşleşmeleri</h3>
-          <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
-            {finalReport.mapped_findings.map((finding, idx) => (
-              <div key={idx} style={{ 
-                background: 'rgba(0,0,0,0.3)', 
-                padding: '1.5rem', 
-                borderRadius: '8px',
-                borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)'}`,
-                minWidth: 0
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <h4 style={{ color: '#fff' }}>{finding.vulnerability_name}</h4>
-                  <span style={{ color: finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)', fontWeight: 'bold' }}>
-                    {finding.severity}
-                  </span>
-                </div>
-                <div style={{ color: 'var(--accent-color)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                  {finding.owasp_category}
-                </div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{finding.description}</p>
-                {finding.code_snippet && (
-                  <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
-                      <strong>Kod Parçacığı (Snippet)</strong> {finding.line_number && <span>- Satır: {finding.line_number}</span>}
+        <>
+          {finalReport.static_report && (
+            <div className="panel" style={{ marginTop: '2rem' }}>
+              <h2><span className="icon">📊</span> Statik Analiz Raporu</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+                {finalReport.static_report.executive_summary}
+              </p>
+              
+              <h3>OWASP Top 10 Eşleşmeleri (Statik)</h3>
+              <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
+                {finalReport.static_report.mapped_findings.map((finding, idx) => (
+                  <div key={`static-${idx}`} style={{ 
+                    background: 'rgba(0,0,0,0.3)', 
+                    padding: '1.5rem', 
+                    borderRadius: '8px',
+                    borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)'}`,
+                    minWidth: 0
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <h4 style={{ color: '#fff' }}>{finding.vulnerability_name}</h4>
+                      <span style={{ color: finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)', fontWeight: 'bold' }}>
+                        {finding.severity}
+                      </span>
                     </div>
-                    <pre style={{ 
-                      background: '#020617', 
-                      padding: '0.75rem', 
-                      borderRadius: '4px', 
-                      overflowX: 'auto',
-                      fontSize: '0.8rem',
-                      color: '#e2e8f0',
-                      border: '1px solid #1e293b'
-                    }}>
-                      <code>{finding.code_snippet}</code>
-                    </pre>
+                    <div style={{ color: 'var(--accent-color)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                      {finding.owasp_category}
+                    </div>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{finding.description}</p>
+                    {finding.code_snippet && (
+                      <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
+                          <strong>Kod Parçacığı (Snippet)</strong> {finding.line_number && <span>- Satır: {finding.line_number}</span>}
+                        </div>
+                        <pre style={{ 
+                          background: '#020617', 
+                          padding: '0.75rem', 
+                          borderRadius: '4px', 
+                          overflowX: 'auto',
+                          fontSize: '0.8rem',
+                          color: '#e2e8f0',
+                          border: '1px solid #1e293b'
+                        }}>
+                          <code>{finding.code_snippet}</code>
+                        </pre>
+                      </div>
+                    )}
+                    <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#94a3b8', background: '#111827', padding: '0.75rem', borderRadius: '4px' }}>
+                      <strong>Çözüm:</strong> {finding.remediation}
+                    </div>
                   </div>
-                )}
-                <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#94a3b8', background: '#111827', padding: '0.75rem', borderRadius: '4px' }}>
-                  <strong>Çözüm:</strong> {finding.remediation}
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
+
+          {finalReport.dynamic_report && (
+            <div className="panel" style={{ marginTop: '2rem' }}>
+              <h2><span className="icon">🚀</span> Dinamik Analiz Raporu</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+                {finalReport.dynamic_report.executive_summary}
+              </p>
+              
+              <h3>OWASP Top 10 Eşleşmeleri (Dinamik)</h3>
+              <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
+                {finalReport.dynamic_report.mapped_findings.map((finding, idx) => (
+                  <div key={`dynamic-${idx}`} style={{ 
+                    background: 'rgba(0,0,0,0.3)', 
+                    padding: '1.5rem', 
+                    borderRadius: '8px',
+                    borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)'}`,
+                    minWidth: 0
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <h4 style={{ color: '#fff' }}>{finding.vulnerability_name}</h4>
+                      <span style={{ color: finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)', fontWeight: 'bold' }}>
+                        {finding.severity}
+                      </span>
+                    </div>
+                    <div style={{ color: 'var(--accent-color)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                      {finding.owasp_category}
+                    </div>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{finding.description}</p>
+                    {finding.code_snippet && (
+                      <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
+                          <strong>Kod Parçacığı (Snippet)</strong> {finding.line_number && <span>- Satır: {finding.line_number}</span>}
+                        </div>
+                        <pre style={{ 
+                          background: '#020617', 
+                          padding: '0.75rem', 
+                          borderRadius: '4px', 
+                          overflowX: 'auto',
+                          fontSize: '0.8rem',
+                          color: '#e2e8f0',
+                          border: '1px solid #1e293b'
+                        }}>
+                          <code>{finding.code_snippet}</code>
+                        </pre>
+                      </div>
+                    )}
+                    <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#94a3b8', background: '#111827', padding: '0.75rem', borderRadius: '4px' }}>
+                      <strong>Çözüm:</strong> {finding.remediation}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!finalReport.static_report && !finalReport.dynamic_report && finalReport.executive_summary && (
+            <div className="panel" style={{ marginTop: '2rem' }}>
+              <h2><span className="icon">📊</span> Yönetici Özeti (Executive Summary)</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+                {finalReport.executive_summary}
+              </p>
+              
+              <h3>OWASP Top 10 Eşleşmeleri</h3>
+              <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
+                {finalReport.mapped_findings?.map((finding, idx) => (
+                  <div key={`fallback-${idx}`} style={{ 
+                    background: 'rgba(0,0,0,0.3)', 
+                    padding: '1.5rem', 
+                    borderRadius: '8px',
+                    borderLeft: `4px solid ${finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)'}`,
+                    minWidth: 0
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <h4 style={{ color: '#fff' }}>{finding.vulnerability_name}</h4>
+                      <span style={{ color: finding.severity === 'High' ? 'var(--danger)' : 'var(--warning)', fontWeight: 'bold' }}>
+                        {finding.severity}
+                      </span>
+                    </div>
+                    <div style={{ color: 'var(--accent-color)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                      {finding.owasp_category}
+                    </div>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{finding.description}</p>
+                    {finding.code_snippet && (
+                      <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
+                          <strong>Kod Parçacığı (Snippet)</strong> {finding.line_number && <span>- Satır: {finding.line_number}</span>}
+                        </div>
+                        <pre style={{ 
+                          background: '#020617', 
+                          padding: '0.75rem', 
+                          borderRadius: '4px', 
+                          overflowX: 'auto',
+                          fontSize: '0.8rem',
+                          color: '#e2e8f0',
+                          border: '1px solid #1e293b'
+                        }}>
+                          <code>{finding.code_snippet}</code>
+                        </pre>
+                      </div>
+                    )}
+                    <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#94a3b8', background: '#111827', padding: '0.75rem', borderRadius: '4px' }}>
+                      <strong>Çözüm:</strong> {finding.remediation}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Raw Findings Panel */}

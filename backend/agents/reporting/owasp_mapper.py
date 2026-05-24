@@ -12,27 +12,44 @@ def owasp_mapper_agent(state: ScannerState) -> dict:
     findings = state.get("findings", [])
     
     if not findings:
-        return {"final_report": json.dumps({"executive_summary": "Herhangi bir zafiyet bulunamadı.", "mapped_findings": []}), "current_phase": "done"}
+        empty_report = {"executive_summary": "Herhangi bir zafiyet bulunamadı.", "mapped_findings": []}
+        return {"final_report": json.dumps({"static_report": empty_report, "dynamic_report": empty_report}), "current_phase": "done"}
         
     system_prompt = """
     Sen bir OWASP Mobile Güvenlik Uzmanısın.
     Görevin sana verilen zafiyet listesini incelemek ve her bir zafiyeti güncel OWASP Mobile Top 10 (M1 - M10) kategorilerinden en uygun olanı ile eşleştirmektir.
-    Ayrıca yöneticiler için kısa bir 'Executive Summary' (Yönetici Özeti) oluşturmalısın.
+    Zafiyetleri kaynağına göre (Statik Ajanlar vs Dinamik Ajanlar) iki ayrı rapora ayırmalısın.
     
     Lütfen aşağıdaki JSON formatında bir çıktı üret:
     {
-      "executive_summary": "Tüm bulguların yöneticiler için teknik olmayan genel özeti...",
-      "mapped_findings": [
-        {
-          "vulnerability_name": "...",
-          "owasp_category": "M1: Improper Platform Usage",
-          "severity": "...",
-          "description": "...",
-          "remediation": "...",
-          "code_snippet": "...",
-          "line_number": "..."
-        }
-      ]
+      "static_report": {
+        "executive_summary": "Statik analiz bulgularının yöneticiler için kısa özeti...",
+        "mapped_findings": [
+          {
+            "vulnerability_name": "...",
+            "owasp_category": "M1: Improper Platform Usage",
+            "severity": "...",
+            "description": "...",
+            "remediation": "...",
+            "code_snippet": "...",
+            "line_number": "..."
+          }
+        ]
+      },
+      "dynamic_report": {
+        "executive_summary": "Dinamik analiz bulgularının yöneticiler için kısa özeti...",
+        "mapped_findings": [
+          {
+            "vulnerability_name": "...",
+            "owasp_category": "M3: Insecure Communication",
+            "severity": "...",
+            "description": "...",
+            "remediation": "...",
+            "code_snippet": "...",
+            "line_number": "..."
+          }
+        ]
+      }
     }
     Sadece JSON döndür.
     """
@@ -58,9 +75,10 @@ def owasp_mapper_agent(state: ScannerState) -> dict:
     except Exception as e:
         print(f"OWASPMapperAgent JSON parse hatası: {e}")
         # Hata durumunda frontend'in çökmemesi için varsayılan json döner
+        empty_report = {"executive_summary": "Rapor oluşturulurken bir hata meydana geldi.", "mapped_findings": []}
         final_report_str = json.dumps({
-            "executive_summary": "Rapor oluşturulurken bir hata meydana geldi.",
-            "mapped_findings": []
+            "static_report": empty_report,
+            "dynamic_report": empty_report
         })
         
     return {
